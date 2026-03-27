@@ -1,0 +1,19 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="640" fill="#101114"/>
+  <rect x="48" y="48" width="1184" height="544" rx="28" fill="#151821" stroke="#2A3143" stroke-width="2"/>
+  <rect x="88" y="92" width="180" height="52" rx="26" fill="#E7F0FF"/>
+  <text x="178" y="126" text-anchor="middle" font-family="Menlo, Monaco, Consolas, monospace" font-size="28" fill="#0E1525">v0.1.0</text>
+  <text x="88" y="230" font-family="Georgia, Times New Roman, serif" font-size="88" fill="#F7F4EA">AntiRot</text>
+  <text x="88" y="304" font-family="Inter, Arial, sans-serif" font-size="34" fill="#D8DFEE">Harness engineering for research agents.</text>
+  <text x="88" y="356" font-family="Inter, Arial, sans-serif" font-size="34" fill="#D8DFEE">Catch unsupported claims, citation drift,</text>
+  <text x="88" y="408" font-family="Inter, Arial, sans-serif" font-size="34" fill="#D8DFEE">and paper slop before publishing.</text>
+  <rect x="88" y="472" width="390" height="62" rx="12" fill="#1C2435"/>
+  <text x="113" y="512" font-family="Menlo, Monaco, Consolas, monospace" font-size="28" fill="#9CC3FF">antirot lint draft.md</text>
+  <circle cx="1038" cy="202" r="88" fill="#1C2435"/>
+  <circle cx="1038" cy="202" r="68" fill="#F05D5E"/>
+  <text x="1038" y="217" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="48" font-weight="700" fill="#FFFFFF">12</text>
+  <text x="1038" y="266" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" fill="#D8DFEE">issues</text>
+  <text x="870" y="392" font-family="Menlo, Monaco, Consolas, monospace" font-size="24" fill="#E7F0FF">unsupported-claim</text>
+  <text x="870" y="430" font-family="Menlo, Monaco, Consolas, monospace" font-size="24" fill="#E7F0FF">citation-not-found</text>
+  <text x="870" y="468" font-family="Menlo, Monaco, Consolas, monospace" font-size="24" fill="#E7F0FF">number-without-citation</text>
+</svg>

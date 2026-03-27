@@ -1,0 +1,20 @@
+name: Integration request
+description: Request an integration example for CI, Codex, Claude Code, or another workflow.
+title: "[Integration]: "
+labels: ["enhancement", "integration"]
+body:
+  - type: input
+    id: target
+    attributes:
+      label: Target workflow
+      description: Which tool or workflow should AntiRot integrate with?
+      placeholder: "GitHub Actions, Codex, Claude Code, pre-commit"
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: Describe the exact review gate or author workflow you want.
+    validations:
+      required: true

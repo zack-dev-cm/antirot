@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: AntiRot launch docs
+    url: https://github.com/zack-dev-cm/antirot/blob/main/docs/publish-checklist.md
+    about: Repo launch plan, metadata, and release notes.

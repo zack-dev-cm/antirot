@@ -1,0 +1,27 @@
+name: Lint rule request
+description: Propose a new evidence-hygiene rule.
+title: "[Rule]: "
+labels: ["enhancement", "lint-rule"]
+body:
+  - type: textarea
+    id: failure_mode
+    attributes:
+      label: Failure mode
+      description: What exact research-agent failure mode should the rule catch?
+      placeholder: "Example: numeric claims in abstracts without any evidence anchor"
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples
+      description: Provide a bad example and, if possible, a good example.
+    validations:
+      required: true
+  - type: textarea
+    id: signal
+    attributes:
+      label: Why this belongs in AntiRot
+      description: Explain why the rule is broadly useful and can run cheaply in CI.
+    validations:
+      required: true

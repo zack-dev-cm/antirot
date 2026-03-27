@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "antirot"
+version = "0.1.0"
+description = "Harness engineering for research agents. Catch paper slop, unsupported claims, and citation drift before publishing."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Zack" }
+]
+keywords = [
+  "agents",
+  "research",
+  "scientific-writing",
+  "llm",
+  "hallucination-detection",
+  "markdown",
+  "citations",
+  "harness-engineering"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Text Processing"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2"]
+
+[project.scripts]
+antirot = "antirot.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
