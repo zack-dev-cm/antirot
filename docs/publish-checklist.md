@@ -28,9 +28,20 @@ Recommended GitHub metadata:
 4. Confirm the README top section still reflects actual CLI output.
 5. Tag the first release as `v0.1.0`.
 
+## Current remote state
+
+As of **March 27, 2026**, `https://github.com/zack-dev-cm/antirot` exists and is **empty**.
+
+That means the remaining publish steps are:
+
+1. refresh the local `gh` token to include `workflow` scope
+2. push `main`
+3. create `v0.1.0`
+4. upload the social preview image in repo settings
+
 ## Push commands
 
-If the repo does not exist yet:
+If you need to create the repo from scratch in a fresh environment:
 
 ```bash
 git branch -M main
@@ -81,6 +92,8 @@ gh release create v0.1.0 \
   --title "AntiRot v0.1.0" \
   --notes-file docs/releases/v0.1.0.md
 ```
+
+If the repo already exists and is empty, you only need the three commands above.
 
 ## After publish
 

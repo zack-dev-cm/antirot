@@ -2,6 +2,8 @@
 
 Prepared on **March 27, 2026** for the `AntiRot` launch.
 
+Use these after the repository contents are live at `https://github.com/zack-dev-cm/antirot`.
+
 ## X post
 
 ### Primary

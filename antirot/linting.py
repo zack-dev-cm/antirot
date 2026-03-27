@@ -105,10 +105,6 @@ class LintReport:
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2)
 
-
-def severity_rank(severity: str) -> int:
-    return 0 if severity == "error" else 1
-
     def to_markdown(self) -> str:
         lines = [
             f"# AntiRot Report: `{self.file_path}`",
@@ -153,6 +149,10 @@ def severity_rank(severity: str) -> int:
                 f"- {issue.severity.upper()} {issue.code} line {issue.line}: {issue.detail}"
             )
         return "\n".join(lines)
+
+
+def severity_rank(severity: str) -> int:
+    return 0 if severity == "error" else 1
 
 
 def lint_markdown(

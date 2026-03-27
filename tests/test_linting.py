@@ -29,3 +29,13 @@ def test_clean_example_passes_strict_gate() -> None:
     report = lint_markdown("examples/clean_paper.md", "examples/references.md")
     assert report.issue_count == 0
     assert report.score >= 90
+
+
+def test_report_renders_text_and_markdown() -> None:
+    report = lint_markdown("examples/sloppy_paper.md", "examples/references.md")
+    markdown = report.to_markdown()
+    text = report.to_text()
+    assert "# AntiRot Report" in markdown
+    assert "| Severity | Code | Line | Detail |" in markdown
+    assert "AntiRot report for examples/sloppy_paper.md" in text
+    assert "unsupported-claim" in text

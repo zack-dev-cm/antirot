@@ -134,6 +134,7 @@ docs/launch-plan.md
 - [Publish checklist](docs/publish-checklist.md)
 - [Release notes](docs/releases/v0.1.0.md)
 - [Social posts](docs/social-posts.md)
+- [Demo script](docs/demo-script.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## Development
