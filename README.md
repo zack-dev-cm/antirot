@@ -57,6 +57,8 @@ antirot lint
 
 If `.antirot.toml` exists, `antirot lint` will use its `draft_glob`, `references`, `strict`, and `min_score` settings automatically.
 
+> Current publish note: the public GitHub repository is live, but the Actions workflow file will be added in a follow-up push after the local GitHub token is refreshed with `workflow` scope. The CLI, release notes, and demo assets are already public.
+
 ## Example
 
 Input draft:
