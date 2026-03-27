@@ -67,6 +67,21 @@ gh release create v0.1.0 \
   --notes-file docs/releases/v0.1.0.md
 ```
 
+## GitHub auth gotcha
+
+If your initial push fails with an error about updating `.github/workflows/ci.yml`, your GitHub CLI token likely does not have the `workflow` scope.
+
+Refresh auth, then retry the push:
+
+```bash
+gh auth refresh -h github.com -s workflow
+git push -u origin main
+gh release create v0.1.0 \
+  --repo zack-dev-cm/antirot \
+  --title "AntiRot v0.1.0" \
+  --notes-file docs/releases/v0.1.0.md
+```
+
 ## After publish
 
 1. Pin the repo on your GitHub profile.
