@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "antirot"
-version = "0.1.0"
-description = "Harness engineering for research agents. Catch paper slop, unsupported claims, and citation drift before publishing."
+version = "0.1.1"
+description = "Lint Markdown drafts for unsupported claims, broken citations, and draft markers."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -13,14 +13,13 @@ authors = [
   { name = "Zack" }
 ]
 keywords = [
-  "agents",
+  "linting",
   "research",
   "scientific-writing",
-  "llm",
-  "hallucination-detection",
   "markdown",
   "citations",
-  "harness-engineering"
+  "fact-checking",
+  "draft-review"
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",

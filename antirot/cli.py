@@ -19,10 +19,7 @@ def main() -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="antirot",
-        description=(
-            "Harness engineering for research agents. "
-            "Catch unsupported claims and citation drift in Markdown drafts."
-        ),
+        description="Lint Markdown drafts for unsupported claims, broken citations, and draft markers.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -82,6 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
 def run_lint(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     references = args.references if args.references is not None else config.get("references")
+    references = validate_references_path(references)
     draft_paths = resolve_drafts(args.draft, config, references)
     strict = args.strict or bool(config.get("strict", False))
     min_score = args.min_score if args.min_score is not None else as_int(config.get("min_score"))
@@ -130,23 +128,27 @@ def run_init(args: argparse.Namespace) -> int:
         print("Refusing to overwrite existing .antirot.toml. Use --force to replace it.")
         return 1
 
-    config_path.write_text(
+    config_path.write_text(render_starter_config(), encoding="utf-8")
+    print(f"Wrote {config_path}")
+    print("Update draft_glob and optional references for your project, then run `antirot lint`.")
+    return 0
+
+
+def render_starter_config() -> str:
+    return (
         "\n".join(
             [
                 "# AntiRot starter config",
-                "# Reference this file in CI or local scripts.",
+                "# Update draft_glob and optional references for your project before linting.",
                 "",
-                'draft_glob = "docs/**/*.md"',
-                'references = "docs/references.md"',
+                '# draft_glob = "docs/**/*.md"',
+                '# references = "docs/references.md"',
                 "strict = true",
                 "min_score = 80",
             ]
         )
-        + "\n",
-        encoding="utf-8",
+        + "\n"
     )
-    print(f"Wrote {config_path}")
-    return 0
 
 
 def load_config(config_arg: str | None) -> dict[str, Any]:
@@ -175,6 +177,16 @@ def parse_scalar(raw_value: str) -> Any:
     if raw_value.isdigit():
         return int(raw_value)
     return raw_value
+
+
+def validate_references_path(references: Any) -> str | None:
+    if not isinstance(references, str) or not references:
+        return None
+    if Path(references).exists():
+        return references
+    raise SystemExit(
+        f"References file not found: {references}. Update --references or .antirot.toml."
+    )
 
 
 def resolve_drafts(

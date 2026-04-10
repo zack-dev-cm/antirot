@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from antirot.cli import build_sarif, load_config, resolve_drafts
+import pytest
+
+from antirot.cli import (
+    build_sarif,
+    load_config,
+    render_starter_config,
+    resolve_drafts,
+    validate_references_path,
+)
 from antirot.linting import lint_markdown
 
 
@@ -28,6 +36,17 @@ def test_load_config_parses_basic_scalars(tmp_path: Path) -> None:
         "strict": True,
         "min_score": 85,
     }
+
+
+def test_render_starter_config_keeps_references_optional() -> None:
+    rendered = render_starter_config()
+    assert '# draft_glob = "docs/**/*.md"' in rendered
+    assert '# references = "docs/references.md"' in rendered
+
+
+def test_validate_references_path_raises_clean_error_for_missing_file() -> None:
+    with pytest.raises(SystemExit, match="References file not found: docs/references.md"):
+        validate_references_path("docs/references.md")
 
 
 def test_resolve_drafts_uses_config_glob(tmp_path: Path) -> None:

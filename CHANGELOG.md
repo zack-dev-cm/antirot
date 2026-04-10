@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.1.1 - 2026-04-10
+
+### Changed
+
+- rewrote the public README around the actual CLI job instead of internal launch notes
+- made `antirot init` generate a safer starter config with commented example paths
+- added a clean CLI error when a configured references file does not exist
+- trimmed internal launch and star-planning docs from the public repo surface
+
 ## v0.1.0 - 2026-03-27
 
 Initial public release.

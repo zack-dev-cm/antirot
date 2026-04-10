@@ -2,62 +2,34 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-0b5fff)
 ![License](https://img.shields.io/badge/license-MIT-111111)
-![Focus](https://img.shields.io/badge/focus-research%20agents-0a7f5a)
-![Scope](https://img.shields.io/badge/zero%20deps-runtime-6f42c1)
+![Output](https://img.shields.io/badge/output-text%20%7C%20json%20%7C%20markdown%20%7C%20sarif-0a7f5a)
+![Runtime](https://img.shields.io/badge/runtime-local--first-6f42c1)
 
-**Harness engineering for research agents.**
+**Lint Markdown drafts for unsupported claims, broken citations, and draft markers.**
 
-AntiRot catches unsupported claims, citation drift, hype language, and draft markers in Markdown papers before your agent ships slop to arXiv, a proposal, or a lab note.
-
-The pitch is simple:
-
-- `optillm` is a pill for inference.
-- `openevolve` is a harness for code search.
-- `autoresearch` turns overnight training loops into agentic science.
-- `symphony` and OpenAI’s Codex docs push toward bounded subagent workflows and harness engineering.
-- **AntiRot is the missing review harness for the final artifact.**
-
-If your agent can write a paper, it also needs a gate that asks: "Which exact claims are actually supported?"
-
-## Why This Exists
-
-The current failure mode in AI-for-science is not only hallucinated facts. It is **credible-looking nonsense**:
-
-- benchmark numbers with no citations
-- "state-of-the-art" language attached to vague comparisons
-- references that do not exist in the bibliography
-- TODOs and draft markers left in release artifacts
-- overconfident claims that read better than the evidence behind them
-
-AntiRot makes those failure modes visible with one command.
+AntiRot is a local-first CLI for papers, proposals, reports, and other Markdown drafts. It flags
+claim-heavy sentences with no visible citation, citations that do not resolve, numeric claims
+without evidence, hype language, and leftover TODOs before the text gets shipped.
 
 ## Quick Start
 
 ```bash
-python3.10 -m venv .venv  # or any Python 3.10+ interpreter
+python3.10 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 
 antirot lint examples/sloppy_paper.md \
   --references examples/references.md \
   --format markdown
-
-antirot lint examples/sloppy_paper.md \
-  --references examples/references.md \
-  --format sarif \
-  --output antirot.sarif
 ```
 
-You can also create a starter config:
+If you want a project config:
 
 ```bash
 antirot init
+# edit .antirot.toml for your draft_glob and optional references path
 antirot lint
 ```
-
-If `.antirot.toml` exists, `antirot lint` will use its `draft_glob`, `references`, `strict`, and `min_score` settings automatically.
-
-> Current publish note: the public GitHub repository is live, but the Actions workflow file will be added in a follow-up push after the local GitHub token is refreshed with `workflow` scope. The CLI, release notes, and demo assets are already public.
 
 ## Example
 
@@ -71,7 +43,7 @@ The system reduces hallucinations to 0.0% while producing world-class papers in 
 We show a 2.7x improvement in experiment throughput compared with prior work [@ghost2026].
 ```
 
-AntiRot report:
+Report:
 
 ```text
 AntiRot report for examples/sloppy_paper.md
@@ -81,7 +53,7 @@ score=0/100 claims=5 coverage=20.0% citation_validity=0.0% issues=12
 - ERROR citation-not-found line 9: Citation `ghost2026` is not defined in the references file.
 ```
 
-## What AntiRot Checks
+## What It Checks
 
 - unsupported claims without visible evidence anchors
 - numeric claims without citations
@@ -89,62 +61,57 @@ score=0/100 claims=5 coverage=20.0% citation_validity=0.0% issues=12
 - hype language without evidence
 - comparative claims without benchmark grounding
 - TODO, TBD, FIXME, XXX, and HACK markers
-- SARIF output for GitHub-native code scanning and CI review flows
-- GitHub code-scanning upload via `github/codeql-action/upload-sarif`
 
-## Why This Project Has Star Potential
+## Output Formats
 
-This repo is designed around the patterns that are working in the current agent wave:
+- `text` for local review
+- `json` for scripts and pipelines
+- `markdown` for human-readable reports
+- `sarif` for GitHub code scanning and CI flows
 
-- **Sharp one-line thesis.** People understand the failure mode instantly.
-- **Low-friction first run.** No API key, no cloud dependency, no browser profile.
-- **Demonstrable before/after.** A bad draft goes in, a precise report comes out.
-- **Agent-compatible.** You can drop it into Codex, Claude Code, or CI as a hard gate.
-- **Extensible.** The first release is a markdown linter; the roadmap grows into claim ledgers, citation fetchers, and subagent review lanes.
+## Configuration
 
-## Design Principles
+`antirot init` writes a starter `.antirot.toml`:
 
-- **Bounded review beats agent sprawl.** Borrowed from the Codex multi-agent and subagent guidance: keep noisy verification work out of the main drafting thread.
-- **Harness over vibes.** Borrowed from OpenAI’s harness-engineering framing: the system is the benchmark, gates, logs, and review surface, not just the prompt.
-- **Show the proof.** Borrowed from the best README patterns in `optillm`, `openevolve`, `autoresearch`, `symphony`, and `paperclip`: strong narrative, quick start, and a concrete demo.
-
-## Roadmap
-
-- claim ledger generation for every numeric or superlative sentence
-- citation fetch hooks for DOI/arXiv/URL resolution
-- section-specific policies for abstract, results, and conclusion
-- CI-friendly SARIF or GitHub annotation output
-- subagent review packs for literature review and benchmark audit lanes
-- paper submission checklist mode for arXiv and workshop pipelines
-
-## Repository Layout
-
-```text
-antirot/                 CLI and lint engine
-examples/                bad draft + references
-tests/                   smoke coverage for the first checks
-docs/reference-patterns.md
-docs/github-star-audit.md
-docs/launch-plan.md
+```toml
+# draft_glob = "docs/**/*.md"
+# references = "docs/references.md"
+strict = true
+min_score = 80
 ```
+
+Set `draft_glob` to the Markdown drafts you want to lint. The `references` path is optional. If
+you set it, point it at a real `.bib`, Markdown references file, or numbered reference list before
+linting.
+
+## CI Example
+
+```bash
+antirot lint docs/paper.md \
+  --references docs/references.bib \
+  --format sarif \
+  --output antirot.sarif
+```
+
+## Current Limits
+
+- heuristics are intentionally simple in `v0.1.0`
+- claim detection is conservative and Markdown-focused
+- config parsing supports scalar values only
 
 ## Docs
 
-- [Reference patterns](docs/reference-patterns.md)
-- [GitHub star audit](docs/github-star-audit.md)
-- [Launch plan](docs/launch-plan.md)
-- [Publish checklist](docs/publish-checklist.md)
 - [Release notes](docs/releases/v0.1.0.md)
-- [Social posts](docs/social-posts.md)
-- [Demo script](docs/demo-script.md)
 - [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
 ## Development
 
 ```bash
 pip install -e '.[dev]'
-pytest -q
-antirot lint examples/sloppy_paper.md --references examples/references.md --strict
+python3 -m pytest -q
+python3 -m antirot.cli lint examples/sloppy_paper.md --references examples/references.md --strict
 ```
 
 ## License
