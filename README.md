@@ -155,6 +155,7 @@ from a `References` section or footnote definition inside the draft.
 ## Docs
 
 - [Release notes](docs/releases/v0.2.0.md)
+- [Reproducibility log](docs/releases/v0.2.0-reproducibility.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Changelog](CHANGELOG.md)
