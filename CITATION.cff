@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: AntiRot
+message: "If you use AntiRot in research or internal review workflows, please cite this repository."
+type: software
+authors:
+  - given-names: Zack
+repository-code: "https://github.com/zack-dev-cm/antirot"
+url: "https://github.com/zack-dev-cm/antirot"
+version: "0.2.0"
+date-released: 2026-04-15
+license: MIT
+keywords:
+  - markdown
+  - citations
+  - linting
+  - research
+  - evidence-hygiene

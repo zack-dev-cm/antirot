@@ -19,13 +19,13 @@ def main() -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="antirot",
-        description="Lint Markdown drafts for unsupported claims, broken citations, and draft markers.",
+        description="Lint Markdown drafts for unsupported claims, weak evidence anchors, broken citations, and draft markers.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     lint_parser = subparsers.add_parser(
         "lint",
-        help="Lint a Markdown draft and print an AntiRot report.",
+        help="Lint a Markdown draft for evidence gaps and print an AntiRot report.",
     )
     lint_parser.add_argument(
         "draft",

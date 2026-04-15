@@ -1,6 +1,6 @@
 # Contributing
 
-AntiRot is intentionally narrow in `v0.1.0`. That is a feature, not an accident.
+AntiRot is intentionally narrow in `v0.2.0`. That is a feature, not an accident.
 
 The bar for contributions is simple:
 

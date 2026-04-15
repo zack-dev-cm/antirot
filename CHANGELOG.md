@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.2.0 - 2026-04-15
+
+### Changed
+
+- upgraded the linter from line-by-line matching to paragraph-aware Markdown parsing
+- added support for inline links, DOIs, arXiv ids, and footnote references as evidence anchors
+- added in-document references section parsing, so numbered references can resolve without a separate file
+- stopped counting unresolved citations as evidence when no references source is loaded
+- reduced false positives from identifiers like `Section 3`, `GPT-4`, and numeric arrays
+- added `absolute-claim` warnings for universal or zero-risk language
+- stopped scanning fenced code blocks and other non-prose Markdown as claims
+
 ## v0.1.1 - 2026-04-10
 
 ### Changed
