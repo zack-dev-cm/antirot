@@ -1,0 +1,108 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Smoke test failing draft
+        run: |
+          python -m antirot.cli lint examples/sloppy_paper.md \
+            --references examples/references.md \
+            --format text > antirot-report.txt
+          test -s antirot-report.txt
+
+      - name: Smoke test JSON, Markdown, and SARIF outputs
+        run: |
+          python -m antirot.cli lint examples/sloppy_paper.md \
+            --references examples/references.md \
+            --format json \
+            --output antirot-report.json
+          python -m antirot.cli lint examples/sloppy_paper.md \
+            --references examples/references.md \
+            --format markdown \
+            --output antirot-report.md
+          python -m antirot.cli lint examples/sloppy_paper.md \
+            --references examples/references.md \
+            --format sarif \
+            --output antirot-report.sarif
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          json_report = json.loads(Path("antirot-report.json").read_text(encoding="utf-8"))
+          assert json_report["issue_count"] > 0
+
+          markdown_report = Path("antirot-report.md").read_text(encoding="utf-8")
+          assert markdown_report.startswith("# AntiRot Report:")
+
+          sarif_report = json.loads(Path("antirot-report.sarif").read_text(encoding="utf-8"))
+          assert sarif_report["version"] == "2.1.0"
+          assert sarif_report["runs"][0]["results"]
+          PY
+
+      - name: Smoke test passing draft
+        run: |
+          python -m antirot.cli lint examples/clean_paper.md \
+            --references examples/references.md \
+            --strict
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Clean generated packaging artifacts
+        run: rm -rf build dist ./*.egg-info
+
+      - name: Build distribution artifacts
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+          python -m build
+          python -m twine check dist/*
+
+      - name: Install built wheel and run CLI smoke test
+        run: |
+          python -m venv .venv-dist
+          . .venv-dist/bin/activate
+          python -m pip install dist/*.whl
+          antirot lint examples/clean_paper.md \
+            --references examples/references.md \
+            --strict
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: antirot-dist
+          path: dist/*
