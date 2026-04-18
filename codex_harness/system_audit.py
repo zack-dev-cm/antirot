@@ -48,12 +48,24 @@ TEXT_FILE_SUFFIXES = {
     ".yml",
 }
 MAX_TEXT_SCAN_BYTES = 512_000
+RG_FILE_GLOBS = (
+    "*.json",
+    "*.md",
+    "*.toml",
+    "*.txt",
+    "*.yaml",
+    "*.yml",
+    "SKILL.md",
+    ".codex-plugin/plugin.json",
+    ".agents/plugins/marketplace.json",
+)
 SEVERITY_RANK = {"ERROR": 0, "WARNING": 1}
 SKILL_PATH_PATTERN = re.compile(
     r'(?P<path>(?:~|/(?:[^/\s"\'`<>]+/)*[^/\s"\'`<>]+)/\.codex/skills/[^\s"\'`<>]+/SKILL\.md)'
 )
 PLUGIN_SECTION_PATTERN = re.compile(r'^\[plugins\."(?P<name>[^"]+)"\]\s*$')
 ENABLED_PATTERN = re.compile(r"^\s*enabled\s*=\s*(?P<value>true|false)\s*$", re.IGNORECASE)
+TODO_PATTERN = re.compile(r"\[TODO:[^]]+\]|TODO:", re.IGNORECASE)
 
 
 @dataclass(slots=True)
@@ -293,6 +305,7 @@ def audit_local_codex_environment(
     scan_roots: list[Path] | None = None,
     recent_usage_days: int = 14,
     max_depth: int = 3,
+    marker_discovery: bool = False,
 ) -> SystemAuditReport:
     codex_home = codex_home.expanduser()
     normalized_roots = [
@@ -318,7 +331,12 @@ def audit_local_codex_environment(
     enabled_plugins = _load_enabled_plugins(codex_home / "config.toml", issues)
     local_skills = _collect_local_skills(codex_home, issues)
     cached_plugins = _collect_cached_plugins(codex_home, enabled_plugins, issues)
-    repo_roots = _discover_repo_roots(normalized_roots, max_depth=max_depth, issues=issues)
+    repo_roots = _discover_repo_roots(
+        normalized_roots,
+        max_depth=max_depth,
+        issues=issues,
+        marker_discovery=marker_discovery,
+    )
     projects = _collect_project_footprints(repo_roots, issues)
     recent_project_usage, recent_session_count, recent_subagent_session_count, recent_models, recent_agent_roles = _collect_recent_usage(
         codex_home / "sessions",
@@ -566,7 +584,13 @@ def _discover_repo_roots(
     *,
     max_depth: int,
     issues: list[AuditIssue],
+    marker_discovery: bool,
 ) -> list[Path]:
+    if marker_discovery:
+        discovered = _discover_repo_roots_by_markers(scan_roots, issues=issues)
+        if discovered:
+            return discovered
+
     discovered: set[Path] = set()
     visited: set[Path] = set()
 
@@ -612,6 +636,44 @@ def _discover_repo_roots(
 
             for child in children:
                 queue.append((child, depth + 1))
+
+    return sorted(discovered)
+
+
+def _discover_repo_roots_by_markers(
+    scan_roots: list[Path],
+    *,
+    issues: list[AuditIssue],
+) -> list[Path]:
+    discovered: set[Path] = set()
+
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            issues.append(
+                AuditIssue(
+                    severity="WARNING",
+                    code="missing-scan-root",
+                    path=str(scan_root),
+                    message="Scan root does not exist and was skipped.",
+                )
+            )
+            continue
+
+        for current_root, dirnames, filenames in os.walk(scan_root):
+            dirnames[:] = [dirname for dirname in dirnames if dirname not in SKIP_DIRS]
+            root_path = Path(current_root)
+            marker_hit = False
+            if "SKILL.md" in filenames:
+                marker_hit = True
+            elif root_path.as_posix().endswith("/.codex-plugin") and "plugin.json" in filenames:
+                marker_hit = True
+            elif root_path.as_posix().endswith("/.agents/plugins") and "marketplace.json" in filenames:
+                marker_hit = True
+            if not marker_hit:
+                continue
+            repo_root = _find_git_root(root_path)
+            if repo_root:
+                discovered.add(repo_root)
 
     return sorted(discovered)
 
@@ -669,6 +731,13 @@ def _collect_project_footprints(
                     )
                 )
 
+        _validate_repo_local_plugins(
+            repo_root,
+            plugin_manifest_files=plugin_manifest_files,
+            marketplace_files=marketplace_files,
+            issues=issues,
+        )
+
         if (
             local_skill_files
             or plugin_manifest_files
@@ -701,7 +770,13 @@ def _repo_files(repo_root: Path) -> list[Path]:
     if shutil.which("rg"):
         try:
             result = subprocess.run(
-                ["rg", "--files", "--hidden", "."],
+                [
+                    "rg",
+                    "--files",
+                    "--hidden",
+                    *[item for glob in RG_FILE_GLOBS for item in ("-g", glob)],
+                    ".",
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -727,7 +802,7 @@ def _repo_files(repo_root: Path) -> list[Path]:
         root_path = Path(current_root)
         for filename in filenames:
             relative_path = (root_path / filename).relative_to(repo_root)
-            if _allow_relative_repo_path(relative_path):
+            if _allow_relative_repo_path(relative_path) and _relevant_repo_file(relative_path):
                 files.append(relative_path)
     return files
 
@@ -736,12 +811,195 @@ def _allow_relative_repo_path(relative_path: Path) -> bool:
     return not any(part in SKIP_DIRS for part in relative_path.parts)
 
 
+def _relevant_repo_file(relative_path: Path) -> bool:
+    relative_text = relative_path.as_posix()
+    return (
+        relative_path.name == "SKILL.md"
+        or relative_text.endswith("/.codex-plugin/plugin.json")
+        or relative_text.endswith("/.agents/plugins/marketplace.json")
+        or relative_path.suffix.lower() in TEXT_FILE_SUFFIXES
+    )
+
+
 def _extract_skill_references(text: str) -> set[str]:
     references: set[str] = set()
     for match in SKILL_PATH_PATTERN.finditer(text):
         raw_path = match.group("path").rstrip("),.:;]")
         references.add(str(Path(raw_path).expanduser()))
     return references
+
+
+def _validate_repo_local_plugins(
+    repo_root: Path,
+    *,
+    plugin_manifest_files: list[str],
+    marketplace_files: list[str],
+    issues: list[AuditIssue],
+) -> None:
+    if not plugin_manifest_files:
+        return
+
+    manifest_names_by_root: dict[str, str] = {}
+    for manifest_relative in plugin_manifest_files:
+        manifest_path = repo_root / manifest_relative
+        try:
+            raw_text = manifest_path.read_text(encoding="utf-8")
+            payload = json.loads(raw_text)
+        except json.JSONDecodeError as exc:
+            issues.append(
+                AuditIssue(
+                    severity="ERROR",
+                    code="invalid-repo-plugin-manifest",
+                    path=f"{repo_root}:{manifest_relative}",
+                    message=f"Failed to parse repo-local plugin manifest JSON: {exc}",
+                )
+            )
+            continue
+
+        plugin_root_relative = Path(manifest_relative).parent.parent.as_posix()
+        plugin_name = str(payload.get("name") or Path(plugin_root_relative).name)
+        manifest_names_by_root[plugin_root_relative] = plugin_name
+
+        _validate_plugin_manifest_payload(
+            repo_root,
+            manifest_relative,
+            plugin_root_relative,
+            payload,
+            raw_text,
+            issues,
+        )
+
+    registered_plugin_roots: set[str] = set()
+    for marketplace_relative in marketplace_files:
+        marketplace_path = repo_root / marketplace_relative
+        try:
+            payload = json.loads(marketplace_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            issues.append(
+                AuditIssue(
+                    severity="ERROR",
+                    code="invalid-marketplace-manifest",
+                    path=f"{repo_root}:{marketplace_relative}",
+                    message=f"Failed to parse marketplace.json: {exc}",
+                )
+            )
+            continue
+
+        for plugin in payload.get("plugins") or []:
+            if not isinstance(plugin, dict):
+                continue
+            source = plugin.get("source") or {}
+            source_path = source.get("path")
+            if not isinstance(source_path, str):
+                continue
+            resolved_root = (repo_root / source_path).resolve()
+            plugin_root_relative = _safe_relative_to_repo(repo_root, resolved_root)
+            if plugin_root_relative is None:
+                issues.append(
+                    AuditIssue(
+                        severity="WARNING",
+                        code="marketplace-plugin-outside-repo",
+                        path=f"{repo_root}:{marketplace_relative}",
+                        message=f"Marketplace entry points outside the repo: `{source_path}`.",
+                    )
+                )
+                continue
+            registered_plugin_roots.add(plugin_root_relative)
+            if not resolved_root.exists():
+                issues.append(
+                    AuditIssue(
+                        severity="ERROR",
+                        code="missing-marketplace-plugin-path",
+                        path=f"{repo_root}:{marketplace_relative}",
+                        message=f"Marketplace entry points at a missing plugin path: `{source_path}`.",
+                    )
+                )
+                continue
+            manifest_name = manifest_names_by_root.get(plugin_root_relative)
+            marketplace_name = plugin.get("name")
+            if manifest_name and marketplace_name and manifest_name != marketplace_name:
+                issues.append(
+                    AuditIssue(
+                        severity="WARNING",
+                        code="marketplace-plugin-name-mismatch",
+                        path=f"{repo_root}:{marketplace_relative}",
+                        message=(
+                            f"Marketplace entry `{marketplace_name}` does not match plugin manifest name "
+                            f"`{manifest_name}` for `{plugin_root_relative}`."
+                        ),
+                    )
+                )
+
+    if not marketplace_files:
+        issues.append(
+            AuditIssue(
+                severity="WARNING",
+                code="repo-plugin-no-marketplace",
+                path=str(repo_root),
+                message="Repo contains plugin manifests but no `.agents/plugins/marketplace.json` file.",
+            )
+        )
+        return
+
+    for plugin_root_relative, plugin_name in sorted(manifest_names_by_root.items()):
+        if plugin_root_relative not in registered_plugin_roots:
+            issues.append(
+                AuditIssue(
+                    severity="WARNING",
+                    code="repo-plugin-not-in-marketplace",
+                    path=f"{repo_root}:{plugin_root_relative}/.codex-plugin/plugin.json",
+                    message=f"Repo-local plugin `{plugin_name}` is not registered in the repo marketplace file.",
+                )
+            )
+
+
+def _validate_plugin_manifest_payload(
+    repo_root: Path,
+    manifest_relative: str,
+    plugin_root_relative: str,
+    payload: dict[str, object],
+    raw_text: str,
+    issues: list[AuditIssue],
+) -> None:
+    plugin_root = repo_root / plugin_root_relative
+    plugin_name = str(payload.get("name") or Path(plugin_root_relative).name)
+    manifest_path = f"{repo_root}:{manifest_relative}"
+
+    if TODO_PATTERN.search(raw_text):
+        issues.append(
+            AuditIssue(
+                severity="WARNING",
+                code="repo-plugin-placeholder-metadata",
+                path=manifest_path,
+                message=f"Repo-local plugin `{plugin_name}` still contains placeholder TODO metadata.",
+            )
+        )
+
+    for field_name, code in (
+        ("skills", "missing-repo-plugin-skills-path"),
+        ("apps", "missing-repo-plugin-apps-path"),
+        ("hooks", "missing-repo-plugin-hooks-path"),
+        ("mcpServers", "missing-repo-plugin-mcp-path"),
+    ):
+        field_value = payload.get(field_name)
+        if not isinstance(field_value, str):
+            continue
+        if not (plugin_root / field_value).exists():
+            issues.append(
+                AuditIssue(
+                    severity="WARNING",
+                    code=code,
+                    path=manifest_path,
+                    message=f"Repo-local plugin `{plugin_name}` declares `{field_name}` at `{field_value}`, but that path was not found.",
+                )
+            )
+
+
+def _safe_relative_to_repo(repo_root: Path, path: Path) -> str | None:
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return None
 
 
 def _collect_recent_usage(
@@ -899,6 +1157,18 @@ def _score_issues(issues: list[AuditIssue]) -> int:
         "missing-plugin-skills-path": (4, 12),
         "missing-plugin-apps-path": (4, 12),
         "missing-plugin-mcp-path": (4, 12),
+        "invalid-repo-plugin-manifest": (10, 20),
+        "invalid-marketplace-manifest": (10, 20),
+        "missing-repo-plugin-skills-path": (4, 12),
+        "missing-repo-plugin-apps-path": (4, 12),
+        "missing-repo-plugin-hooks-path": (4, 12),
+        "missing-repo-plugin-mcp-path": (4, 12),
+        "repo-plugin-placeholder-metadata": (5, 15),
+        "repo-plugin-no-marketplace": (5, 10),
+        "repo-plugin-not-in-marketplace": (5, 15),
+        "missing-marketplace-plugin-path": (6, 18),
+        "marketplace-plugin-name-mismatch": (3, 9),
+        "marketplace-plugin-outside-repo": (3, 9),
         "broken-external-skill-reference": (4, 24),
         "missing-config": (5, 5),
         "missing-scan-root": (3, 9),

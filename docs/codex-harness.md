@@ -43,6 +43,16 @@ python3 -m codex_harness system-audit \
   --format markdown
 ```
 
+Audit the wider workspace without hand-maintaining a repo list:
+
+```bash
+python3 -m codex_harness system-audit \
+  --codex-home ~/.codex \
+  --scan-root ~/Documents/GitHub \
+  --marker-discovery \
+  --format markdown
+```
+
 Fail closed for open-source prep:
 
 ```bash

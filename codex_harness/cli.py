@@ -100,6 +100,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum depth for repo discovery under scan roots. Default: 3.",
     )
     system_audit_parser.add_argument(
+        "--marker-discovery",
+        action="store_true",
+        help="Discover only repos with Codex markers such as SKILL.md or plugin manifests. Recommended for large workspace roots.",
+    )
+    system_audit_parser.add_argument(
         "--format",
         choices=("text", "json", "markdown"),
         default="text",
@@ -160,6 +165,7 @@ def run_system_audit(args: argparse.Namespace) -> int:
         scan_roots=[Path(path) for path in args.scan_root] if args.scan_root else None,
         recent_usage_days=args.recent_usage_days,
         max_depth=args.max_depth,
+        marker_discovery=args.marker_discovery,
     )
     print(_render_report(report, args.format))
     if args.strict and report.has_errors:

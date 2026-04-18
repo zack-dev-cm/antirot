@@ -178,3 +178,92 @@ def test_system_audit_accepts_string_session_source(tmp_path: Path) -> None:
 
     assert report.recent_session_count == 1
     assert report.recent_project_usage[0].name == "string-source"
+
+
+def test_system_audit_marker_discovery_finds_only_codex_repos(tmp_path: Path) -> None:
+    codex_home = tmp_path / ".codex"
+    (codex_home / "skills" / "demo-skill").mkdir(parents=True)
+    (codex_home / "skills" / "demo-skill" / "SKILL.md").write_text(
+        "# Demo\n",
+        encoding="utf-8",
+    )
+
+    codex_repo = tmp_path / "workspace" / "codex-repo"
+    (codex_repo / ".git").mkdir(parents=True)
+    (codex_repo / "skills" / "demo").mkdir(parents=True)
+    (codex_repo / "skills" / "demo" / "SKILL.md").write_text("# Demo\n", encoding="utf-8")
+
+    plain_repo = tmp_path / "workspace" / "plain-repo"
+    (plain_repo / ".git").mkdir(parents=True)
+    (plain_repo / "README.md").write_text("# Plain\n", encoding="utf-8")
+
+    report = audit_local_codex_environment(
+        codex_home,
+        scan_roots=[tmp_path / "workspace"],
+        marker_discovery=True,
+    )
+
+    assert [Path(project.root).name for project in report.projects] == ["codex-repo"]
+
+
+def test_system_audit_flags_repo_plugin_placeholder_metadata(tmp_path: Path) -> None:
+    codex_home = tmp_path / ".codex"
+    (codex_home / "skills" / "demo-skill").mkdir(parents=True)
+    (codex_home / "skills" / "demo-skill" / "SKILL.md").write_text(
+        "# Demo\n",
+        encoding="utf-8",
+    )
+
+    repo_root = tmp_path / "repos" / "plugin-repo"
+    (repo_root / ".git").mkdir(parents=True)
+    (repo_root / ".agents" / "plugins").mkdir(parents=True)
+    (repo_root / ".agents" / "plugins" / "marketplace.json").write_text(
+        """
+        {
+          "name": "local-market",
+          "plugins": [
+            {
+              "name": "demo-plugin",
+              "source": {
+                "source": "local",
+                "path": "./plugins/demo-plugin"
+              }
+            }
+          ]
+        }
+        """.strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    plugin_root = repo_root / "plugins" / "demo-plugin"
+    (plugin_root / ".codex-plugin").mkdir(parents=True)
+    (plugin_root / "skills").mkdir(parents=True)
+    (plugin_root / ".codex-plugin" / "plugin.json").write_text(
+        """
+        {
+          "name": "demo-plugin",
+          "author": {
+            "name": "[TODO: Author Name]"
+          },
+          "homepage": "[TODO: https://example.com/demo-plugin]",
+          "skills": "./skills"
+        }
+        """.strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = audit_local_codex_environment(
+        codex_home,
+        scan_roots=[tmp_path / "repos"],
+    )
+
+    assert any(
+        issue.code == "repo-plugin-placeholder-metadata" for issue in report.issues
+    )
+    assert not any(
+        issue.code == "marketplace-plugin-outside-repo" for issue in report.issues
+    )
+    assert not any(
+        issue.code == "repo-plugin-not-in-marketplace" for issue in report.issues
+    )
