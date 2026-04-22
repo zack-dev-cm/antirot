@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agentic Codex Dev"
+  short_description: "Simple Codex agentic development loop"
+  default_prompt: "Use $agentic-codex-dev to plan, implement, verify, and publish a small agentic software development change with a clean GitHub and ClawHub surface."
+
+policy:
+  allow_implicit_invocation: true
