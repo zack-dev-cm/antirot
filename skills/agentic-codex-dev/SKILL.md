@@ -1,7 +1,7 @@
 ---
 name: agentic-codex-dev
 description: Use when planning, implementing, reviewing, or publishing agentic software development work with Codex, GitHub, and OpenClaw/ClawHub. This skill turns vague coding-agent requests into small verified loops, repo-local instructions, subagent-safe decomposition, and open-source release checks without overengineering.
-version: 0.1.0
+version: 0.1.1
 metadata:
   openclaw:
     homepage: https://github.com/zack-dev-cm/antirot/tree/codex/agentic-codex-dev-skill/skills/agentic-codex-dev

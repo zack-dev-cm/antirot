@@ -140,7 +140,7 @@ Sources: <https://github.com/openclaw/clawhub>, <https://github.com/openclaw/cla
 - Keep: a publishable skill is a `SKILL.md` plus supporting text files.
 - Keep: frontmatter metadata drives registry summary and search.
 - Keep: slugs should be lowercase and URL-safe.
-- Keep: `clawhub skill publish <path> --version <semver>` is the publish path.
+- Keep: `clawhub publish <path> --version <semver>` is the publish path in the current CLI; some docs may still mention `skill publish`.
 - Keep: ClawHub-published skills are released under MIT-0.
 - Avoid: bundled binaries, opaque installers, secret-reading helpers, or files not needed by the skill.
 
