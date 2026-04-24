@@ -1,0 +1,4 @@
+interface:
+  display_name: "ClawHub Skills Security"
+  short_description: "Audit ClawHub skills before install or publish"
+  default_prompt: "Use $clawhub-skills-security to audit this ClawHub skill before installing or publishing it."
